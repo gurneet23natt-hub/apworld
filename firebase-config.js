@@ -15,4 +15,12 @@
 //
 // These values are meant to be public. The Firestore rules in firestore.rules are what keep
 // each student's progress private.
-window.FIREBASE_CONFIG = null;
+window.FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDu8CLZFmqj4AXmk1WboQq4160-GL4Hgik",
+  authDomain: "world-381fa.firebaseapp.com",
+  projectId: "world-381fa",
+  storageBucket: "world-381fa.firebasestorage.app",
+  messagingSenderId: "84310874078",
+  appId: "1:84310874078:web:6b77d9e12a9a6410deef4f",
+  measurementId: "G-BQM32FWXBK"
+};
