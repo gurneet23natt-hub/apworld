@@ -3,15 +3,18 @@
 A neutral-themed study site for AP World History: Modern. Open `index.html` in a browser; there is no build step.
 
 - **Units**: summaries, key concepts, and exam weighting for all 9 units
-- **Practice**: 150 multiple-choice questions with explanations, filtered by unit, plus "retry missed"
-- **Textbook**: College Board–style question sets for chapters 11–33 of *The Earth and Its Peoples* (AP 6th edition).
-  Each set shares a source (a primary-source excerpt, a data table, or a practice passage), like the AP exam.
-  Chapter tabs let you focus on one chapter, and chapters can be locked or unlocked. Scoring 80%+ on a chapter
-  unlocks the next one.
-- **Flashcards**: 54 key terms, filterable by unit
-- **Writing**: SAQ / DBQ / LEQ rubrics, plus timed prompts with a draft box that saves to your account
+- **Practice**: multiple-choice questions with explanations, filtered by unit, plus "retry missed"
+- **Textbook**: College Board–style question sets for all 33 chapters of *The Earth and Its Peoples* (AP 6th
+  edition); chapters 1–10 are tagged Foundations (before c. 1200). Each set shares a source (a primary-source
+  excerpt, a historian's argument, or a practice passage), like the AP exam. Chapter tabs let you focus on one
+  chapter, and chapters can be locked or unlocked; scoring 80%+ on a chapter unlocks the next one.
+- **Flashcards**: unit key terms plus vocabulary for each chapter, with a deck picker by unit or chapter
+- **Writing**: SAQ / DBQ / LEQ practice using official College Board released free-response exams (linked on
+  AP Central), with the rubric, an exam-length timer, a draft box that saves to your account, and self-scoring
 - **Accounts**: sign-up / log-in page (first name, last name, email, password)
 - **Progress**: Mastery / Accuracy toggle by unit and by chapter, and a downloadable `.txt` progress report
+
+The site intentionally does not display how many questions are in the bank.
 
 All questions and practice passages are original. Quoted primary sources are short excerpts. No textbook text is
 reproduced; chapter titles are used only to line questions up with the book.
@@ -20,9 +23,11 @@ reproduced; chapter titles are used only to line questions up with the book.
 
 - `index.html`: page layout, sign-up / log-in screen
 - `css/style.css`: styles (light and dark themes)
-- `js/data.js`: units, unit questions, flashcards, writing rubrics and prompts
-- `js/textbook.js`: chapter list and chapter question sets. In every question the **first** option is correct;
-  options are shuffled when shown.
+- `js/data.js`: units, unit questions, flashcards, writing rubrics, practice prompts, and official exam links
+- `js/textbook.js`: chapter list, a few original sets for chapters 11–33, and the `TEXTBOOK.add` / `TEXTBOOK.vocab`
+  helpers. In every question the **first** option is correct; options are shuffled when shown.
+- `js/book/chNN.js`: question sets and flashcards for each chapter (format documented in `js/textbook.js`)
+- `tools/check.js`: run `node tools/check.js` to validate every question and card (counts, duplicates, format)
 - `js/app.js`: routing, quizzes, chapter locks, accounts, progress, and the report
 - `firebase-config.js`: Firebase settings (`null` = accounts saved in the browser only)
 - `firestore.rules`: database rules that keep each student's data private
