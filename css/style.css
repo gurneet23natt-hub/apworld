@@ -328,3 +328,10 @@ a.chip { text-decoration: none; }
   .acct { margin-left: auto; }
   nav { order: 3; width: 100%; margin-left: -8px; }
 }
+
+.deck-pick { display: flex; align-items: center; gap: 10px; margin-top: 16px; font-weight: 500; font-size: 0.9rem; }
+.deck-pick select {
+  font: 0.95rem var(--sans); color: var(--text); background: var(--surface);
+  border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px; max-width: 100%; min-width: 0; flex: 1 1 auto;
+}
+@media (min-width: 641px) { .deck-pick select { flex: 0 1 420px; } }

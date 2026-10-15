@@ -713,6 +713,7 @@
               </div>
               <div class="row">
                 <button class="btn primary" id="focusBtn">Focus: practice Chapter ${current.num}</button>
+                ${(current.vocab || []).length ? `<a class="btn" href="#/flashcards?deck=c${current.num}">Chapter ${current.num} flashcards (${current.vocab.length})</a>` : ""}
               </div>
               <h3 style="margin-top:28px">Sources in this chapter</h3>
               <ul class="concepts">${current.sets.map((set) => `<li><span class="pill">${esc(set.source.kind)}</span> <span class="small">${esc(set.source.cite)}</span></li>`).join("")}</ul>`}
@@ -746,12 +747,25 @@
   // =====================================================================
   // Flashcards
   // =====================================================================
+  // Every card: unit key terms plus chapter vocabulary from js/book/*.js
+  const ALL_CARDS = FLASHCARDS.map((c) => ({ ...c, tag: `Unit ${c.unit}` })).concat(
+    TEXTBOOK.chapters.flatMap((ch) => (ch.vocab || []).map((v) => ({ ...v, unit: ch.unit, chapter: ch.num, tag: `Ch. ${ch.num}` })))
+  );
+
   function renderFlashcards(params) {
-    let unit = params.get("unit") ? Number(params.get("unit")) : 0;
+    // deck: "all", "u3" (unit 3, including its chapters' vocabulary), or "c13" (chapter 13)
+    let deckId = params.get("deck") || (params.get("unit") ? "u" + params.get("unit") : "all");
     let deck = [], i = 0;
-    const build = () => { deck = unit ? FLASHCARDS.filter((c) => c.unit === unit) : FLASHCARDS.slice(); i = 0; };
+    const build = () => {
+      const n = Number(deckId.slice(1));
+      deck = deckId === "all" ? ALL_CARDS.slice()
+        : deckId[0] === "u" ? ALL_CARDS.filter((c) => c.unit === n)
+        : ALL_CARDS.filter((c) => c.chapter === n);
+      i = 0;
+    };
 
     function onKey(e) {
+      if (e.target.tagName === "SELECT") return;
       if (e.key === "ArrowRight") move(1);
       else if (e.key === "ArrowLeft") move(-1);
       else if (e.key === " ") { e.preventDefault(); flip(); }
@@ -760,21 +774,31 @@
     setCleanup(() => document.removeEventListener("keydown", onKey));
 
     const flip = () => { const fc = app.querySelector(".flashcard"); if (fc) fc.classList.toggle("flipped"); };
-    const move = (d) => { i = (i + d + deck.length) % deck.length; draw(); };
+    const move = (d) => { if (deck.length) { i = (i + d + deck.length) % deck.length; draw(); } };
+    const count = (f) => ALL_CARDS.filter(f).length;
 
     function draw() {
       const c = deck[i];
+      const opt = (id, label, n) => `<option value="${id}" ${deckId === id ? "selected" : ""}>${esc(label)} (${n})</option>`;
       app.innerHTML = `
-        <div class="eyebrow">Key terms</div>
+        <div class="eyebrow">Key terms · ${ALL_CARDS.length} cards</div>
         <h1>Flashcards</h1>
-        <div class="chips" id="fcChips" style="margin-top:16px">
-          <button class="chip" data-unit="0" aria-pressed="${unit === 0}">All</button>
-          ${UNITS.map((u) => `<button class="chip" data-unit="${u.id}" aria-pressed="${unit === u.id}">Unit ${u.id}</button>`).join("")}
-        </div>
+        <label class="deck-pick">Deck
+          <select id="deckSel">
+            ${opt("all", "All cards", ALL_CARDS.length)}
+            <optgroup label="By unit">
+              ${UNITS.map((u) => opt("u" + u.id, `Unit ${u.id}: ${u.title}`, count((x) => x.unit === u.id))).join("")}
+            </optgroup>
+            <optgroup label="By textbook chapter">
+              ${TEXTBOOK.chapters.filter((ch) => (ch.vocab || []).length).map((ch) => opt("c" + ch.num, `Ch. ${ch.num}: ${ch.title}`, ch.vocab.length)).join("")}
+            </optgroup>
+          </select>
+        </label>
+        ${c ? `
         <div class="flash-wrap">
           <div class="flashcard" tabindex="0" role="button" aria-label="Flip card">
             <div class="flash-inner">
-              <div class="flash-face"><div class="eyebrow">Unit ${c.unit}</div><div class="flash-term">${esc(c.term)}</div><div class="flash-hint">Click or press space to flip</div></div>
+              <div class="flash-face"><div class="eyebrow">${esc(c.tag)}</div><div class="flash-term">${esc(c.term)}</div><div class="flash-hint">Click or press space to flip</div></div>
               <div class="flash-face back"><div class="flash-def">${esc(c.def)}</div></div>
             </div>
           </div>
@@ -783,18 +807,18 @@
             <span class="muted small">${i + 1} / ${deck.length} · <button class="chip chip-sm" id="shuffleBtn">Shuffle</button></span>
             <button class="btn" id="nextCard" aria-label="Next card">→</button>
           </div>
-        </div>`;
+        </div>` : `<p class="muted" style="margin-top:24px">No cards in this deck yet.</p>`}`;
+      $("#deckSel").addEventListener("change", (e) => {
+        deckId = e.target.value;
+        history.replaceState(null, "", "#/flashcards?deck=" + deckId);
+        build();
+        draw();
+      });
+      if (!c) return;
       app.querySelector(".flashcard").addEventListener("click", flip);
       $("#prevBtn").addEventListener("click", () => move(-1));
       $("#nextCard").addEventListener("click", () => move(1));
       $("#shuffleBtn").addEventListener("click", () => { deck = shuffle(deck); i = 0; draw(); });
-      $("#fcChips").addEventListener("click", (e) => {
-        const b = e.target.closest(".chip");
-        if (!b) return;
-        unit = Number(b.dataset.unit);
-        build();
-        draw();
-      });
     }
     build();
     draw();

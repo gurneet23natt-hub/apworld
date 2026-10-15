@@ -7,6 +7,16 @@ const TEXTBOOK = {
   title: "The Earth and Its Peoples",
   edition: "AP 6th edition",
   chapters: [
+    { num: 1, title: "Nature, Humanity, and History", dates: "to 3500 B.C.E.", unit: 0, sets: [] },
+    { num: 2, title: "The First River-Valley Civilizations", dates: "3500–1500 B.C.E.", unit: 0, sets: [] },
+    { num: 3, title: "The Mediterranean and Middle East", dates: "2000–500 B.C.E.", unit: 0, sets: [] },
+    { num: 4, title: "New Civilizations Outside the West Asian Core", dates: "2300 B.C.E.–350 C.E.", unit: 0, sets: [] },
+    { num: 5, title: "Greece and Iran", dates: "1000–30 B.C.E.", unit: 0, sets: [] },
+    { num: 6, title: "An Age of Empires: Rome and Han China", dates: "753 B.C.E.–330 C.E.", unit: 0, sets: [] },
+    { num: 7, title: "India and Southeast Asia", dates: "1500 B.C.E.–1025 C.E.", unit: 0, sets: [] },
+    { num: 8, title: "Networks of Communication and Exchange", dates: "300 B.C.E.–1100 C.E.", unit: 0, sets: [] },
+    { num: 9, title: "The Sasanid Empire and the Rise of Islam", dates: "200–1200", unit: 0, sets: [] },
+    { num: 10, title: "Christian Europe Emerges", dates: "300–1200", unit: 0, sets: [] },
     {
       num: 11, title: "Inner and East Asia", dates: "400–1200", unit: 1,
       sets: [
@@ -856,4 +866,27 @@ const TEXTBOOK = {
       ],
     },
   ],
+};
+
+// Compact format used by the js/book/*.js files:
+// TEXTBOOK.add(chapterNum, [
+//   [kind, sourceText, cite, [stem, correct, wrong1, wrong2, wrong3, explanation], ...more questions],
+// ]);
+// kind: "P" practice passage written for this site, "Q" quoted primary source, "S" secondary-source summary.
+TEXTBOOK.add = function (num, sets) {
+  const ch = TEXTBOOK.chapters.find((c) => c.num === num);
+  const KINDS = { P: "Practice passage", Q: "Primary source", S: "Historical interpretation" };
+  sets.forEach(([kind, text, cite, ...qs]) => {
+    ch.sets.push({
+      source: { kind: KINDS[kind], text, cite: cite || "Written for this site" },
+      questions: qs.map(([q, a, b, c, d, why]) => ({ q, options: [a, b, c, d], why })),
+    });
+  });
+};
+
+// Chapter vocabulary for flashcards: TEXTBOOK.vocab(chapterNum, [[term, definition], ...]).
+// Definitions are written for this site, not copied from the textbook's glossary.
+TEXTBOOK.vocab = function (num, cards) {
+  const ch = TEXTBOOK.chapters.find((c) => c.num === num);
+  ch.vocab = (ch.vocab || []).concat(cards.map(([term, def]) => ({ term, def })));
 };
