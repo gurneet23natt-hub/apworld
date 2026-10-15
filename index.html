@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>AP World Practice</title>
-  <meta name="description" content="Practice questions, flashcards, and writing prompts for AP World History: Modern." />
+  <meta name="description" content="Practice questions, textbook chapter sets, flashcards, and writing prompts for AP World History: Modern." />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%237d705f%27/%3E%3Ctext x=%2716%27 y=%2722%27 font-family=%27Georgia%27 font-size=%2716%27 text-anchor=%27middle%27 fill=%27%23fdfcfa%27%3EW%3C/text%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -12,28 +12,82 @@
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <header class="site-header">
+  <header class="site-header" id="siteHeader" hidden>
     <div class="header-inner">
       <a class="brand" href="#/">AP World <span>· Modern Practice</span></a>
       <nav aria-label="Main">
         <a href="#/" data-route="">Home</a>
         <a href="#/units" data-route="units">Units</a>
         <a href="#/practice" data-route="practice">Practice</a>
+        <a href="#/textbook" data-route="textbook">Textbook</a>
         <a href="#/flashcards" data-route="flashcards">Flashcards</a>
         <a href="#/writing" data-route="writing">Writing</a>
         <a href="#/progress" data-route="progress">Progress</a>
       </nav>
+      <div class="acct">
+        <span class="acct-name" id="acctName"></span>
+        <button class="btn btn-sm" id="logoutBtn">Log out</button>
+      </div>
       <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></svg></button>
     </div>
   </header>
 
-  <main id="app"></main>
+  <div class="booting" id="booting">Loading…</div>
 
-  <footer>
-    Unofficial study tool. AP® is a registered trademark of the College Board, which does not endorse this site.
+  <!-- Sign up / log in -->
+  <section class="auth" id="auth" hidden>
+    <div class="auth-side">
+      <div class="eyebrow">AP World History: Modern</div>
+      <h1>Study every era, one chapter at a time.</h1>
+      <p class="lead">College Board–style questions organized by unit and by chapter of <em>The Earth and Its Peoples</em>, with flashcards, essay practice, and progress that follows your account.</p>
+      <ul class="auth-points">
+        <li>Source-based multiple-choice sets with explanations</li>
+        <li>Chapter tabs you can focus on, lock, and unlock</li>
+        <li>Mastery and accuracy tracking with a shareable report</li>
+      </ul>
+    </div>
+    <div class="card auth-card">
+      <div class="seg" role="tablist">
+        <button role="tab" id="tabSignup" aria-selected="true">Sign up</button>
+        <button role="tab" id="tabLogin" aria-selected="false">Log in</button>
+      </div>
+
+      <form id="signupForm" novalidate>
+        <div class="field-row">
+          <label class="field"><span>First name</span><input id="suFirst" autocomplete="given-name" required /></label>
+          <label class="field"><span>Last name</span><input id="suLast" autocomplete="family-name" required /></label>
+        </div>
+        <label class="field"><span>Email</span><input id="suEmail" type="email" autocomplete="email" required /></label>
+        <label class="field"><span>Password</span><input id="suPass" type="password" autocomplete="new-password" minlength="8" required /><small>At least 8 characters.</small></label>
+        <button class="btn primary wide" type="submit">Create account</button>
+        <p class="small muted center">Already have an account? <button type="button" class="linkish" id="toLogin">Log in</button></p>
+      </form>
+
+      <form id="loginForm" novalidate hidden>
+        <label class="field"><span>Email</span><input id="liEmail" type="email" autocomplete="email" required /></label>
+        <label class="field"><span>Password</span><input id="liPass" type="password" autocomplete="current-password" required /></label>
+        <button class="btn primary wide" type="submit">Log in</button>
+        <p class="small muted center">
+          <button type="button" class="linkish" id="forgotBtn" hidden>Forgot password?</button>
+          <span id="forgotSep" hidden> · </span>
+          New here? <button type="button" class="linkish" id="toSignup">Create an account</button>
+        </p>
+      </form>
+
+      <p class="auth-msg" id="authMsg" role="status"></p>
+      <p class="small muted center" id="authMode"></p>
+    </div>
+  </section>
+
+  <main id="app" hidden></main>
+
+  <footer id="siteFooter" hidden>
+    Unofficial study tool, not affiliated with the College Board or Cengage. AP® is a registered trademark of the College Board.
   </footer>
 
+  <script src="firebase-config.js"></script>
   <script src="js/data.js"></script>
+  <script src="js/textbook.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
