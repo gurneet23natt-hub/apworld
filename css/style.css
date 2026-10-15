@@ -335,3 +335,14 @@ a.chip { text-decoration: none; }
   border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px; max-width: 100%; min-width: 0; flex: 1 1 auto;
 }
 @media (min-width: 641px) { .deck-pick select { flex: 0 1 420px; } }
+
+/* ---------- Writing practice ---------- */
+.pick-grid { display: grid; gap: 12px; grid-template-columns: 2fr 1fr 1.4fr; margin-top: 12px; }
+.pick-grid select, .score-row select {
+  font: 0.95rem var(--sans); color: var(--text); background: var(--bg);
+  border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; width: 100%; min-width: 0;
+}
+.official { display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-top: 18px; padding: 16px; border-radius: 10px; background: var(--surface-2); }
+.score-row { display: grid; grid-template-columns: minmax(0, 1fr) 110px; gap: 16px; align-items: center; padding: 12px 0; border-top: 1px solid var(--border); }
+.score-total { font-family: var(--serif); font-size: 1.6rem; }
+@media (max-width: 760px) { .pick-grid { grid-template-columns: 1fr; } }

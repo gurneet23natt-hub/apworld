@@ -480,3 +480,43 @@ const WRITING = {
     { type: "SAQ", skill: "Explain", text: "(A) Identify ONE way the Cold War affected newly independent states. (B) Explain ONE goal of the Non-Aligned Movement. (C) Explain ONE example of a proxy conflict." },
   ],
 };
+
+// Official College Board released free-response exams. The site links to the official PDFs
+// on AP Central rather than copying them. sg: scoring guidelines (null if not confirmed).
+const CB = "https://apcentral.collegeboard.org/media/pdf/";
+const OFFICIAL_EXAMS = [
+  { id: "2026", label: "2026 exam", frq: CB + "ap26-frq-world-history-modern.pdf", sg: null },
+  { id: "2025-1", label: "2025 exam, Set 1", frq: CB + "ap25-frq-world-history-modern-set-1.pdf", sg: CB + "ap25-sg-world-history-modern-set-1.pdf" },
+  { id: "2025-2", label: "2025 exam, Set 2", frq: CB + "ap25-frq-world-history-modern-set-2.pdf", sg: CB + "ap25-sg-world-history-modern-set-2.pdf" },
+  { id: "2024-1", label: "2024 exam, Set 1", frq: CB + "ap24-frq-world-history-set-1.pdf", sg: CB + "ap24-sg-world-history-modern-set-1.pdf" },
+  { id: "2024-2", label: "2024 exam, Set 2", frq: CB + "ap24-frq-world-history-set-2.pdf", sg: CB + "ap24-sg-world-history-modern-set-2.pdf" },
+  { id: "2023-1", label: "2023 exam, Set 1", frq: CB + "ap23-frq-world-history-modern-set-1.pdf", sg: null },
+  { id: "2023-2", label: "2023 exam, Set 2", frq: CB + "ap23-frq-world-history-modern-set-2.pdf", sg: CB + "ap23-sg-world-history-modern-set-2.pdf" },
+  { id: "2021", label: "2021 exam", frq: CB + "ap21-frq-world-history_1.pdf", sg: null },
+];
+const OFFICIAL_PAGE = "https://apcentral.collegeboard.org/courses/ap-world-history/exam/past-exam-questions";
+
+// Self-scoring rows: [category, max points, what earns it]
+const SELF_SCORE = {
+  SAQ: [["Part A", 1, "Accurately answers part A"], ["Part B", 1, "Accurately answers part B"], ["Part C", 1, "Accurately answers part C"]],
+  DBQ: [
+    ["Thesis", 1, "Defensible claim with a line of reasoning"],
+    ["Contextualization", 1, "Broader historical context relevant to the prompt"],
+    ["Evidence from documents", 2, "1: content of 3 docs · 2: 4 docs support an argument"],
+    ["Evidence beyond documents", 1, "One specific outside example used in the argument"],
+    ["Sourcing", 1, "POV, purpose, situation, or audience explained for 2 docs"],
+    ["Complexity", 1, "Complex understanding of the topic"],
+  ],
+  LEQ: [
+    ["Thesis", 1, "Defensible claim with a line of reasoning"],
+    ["Contextualization", 1, "Broader historical context relevant to the prompt"],
+    ["Evidence", 2, "1: two specific examples · 2: examples support an argument"],
+    ["Analysis & reasoning", 2, "1: uses a reasoning skill · 2: complex understanding"],
+  ],
+};
+// Which questions in each official exam are of each type, and their timing in minutes.
+const FRQ_TASKS = {
+  SAQ: { minutes: 40, tasks: [["1", "Question 1 (secondary source, required)"], ["2", "Question 2 (primary source, required)"], ["3", "Question 3 (choose 3 or 4)"], ["4", "Question 4 (choose 3 or 4)"]] },
+  DBQ: { minutes: 60, tasks: [["1", "Question 1: Document-based question"]] },
+  LEQ: { minutes: 40, tasks: [["2", "Question 2 (choose one)"], ["3", "Question 3 (choose one)"], ["4", "Question 4 (choose one)"]] },
+};

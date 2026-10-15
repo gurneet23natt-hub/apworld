@@ -256,6 +256,7 @@
       history: Array.isArray(d.history) ? d.history : [],
       unlocked: Array.isArray(d.unlocked) ? d.unlocked : [TEXTBOOK.chapters[0].num],
       drafts: d.drafts || {},
+      scores: d.scores || {},
       prefs: d.prefs || {},
     };
   }
@@ -364,7 +365,7 @@
         <h3>${esc(u.title)}</h3>
         <div class="meta"><span>${esc(u.dates)}</span><span>·</span><span>${esc(u.weight)} of exam</span></div>
         <div class="progress" aria-label="${s.masteryPct}% mastered"><div style="width:${s.masteryPct}%"></div></div>
-        <div class="small muted">${s.mastered} / ${s.total} mastered${s.accPct !== null ? ` · ${s.accPct}% accuracy` : ""}</div>
+        <div class="small muted">${s.masteryPct}% mastered${s.accPct !== null ? ` · ${s.accPct}% accuracy` : ""}</div>
       </a>`;
   }
 
@@ -382,8 +383,8 @@
       </section>
 
       <section class="section grid-4">
-        <div class="card stat"><div class="num">${ALL_QS.length}</div><div class="label">Practice questions</div></div>
-        <div class="card stat"><div class="num">${s.attempted}</div><div class="label">Attempted</div></div>
+        <div class="card stat"><div class="num">${s.attempted}</div><div class="label">Questions answered</div></div>
+        <div class="card stat"><div class="num">${store.history.length}</div><div class="label">Sets completed</div></div>
         <div class="card stat"><div class="num">${s.masteryPct}%</div><div class="label">Mastery</div></div>
         <div class="card stat"><div class="num">${s.accPct === null ? "—" : s.accPct + "%"}</div><div class="label">Accuracy</div></div>
       </section>
@@ -416,7 +417,7 @@
       <div class="row" style="margin-top:20px">
         <a class="btn primary" href="#/practice?unit=${u.id}&start=1">Practice Unit ${u.id}</a>
         <a class="btn" href="#/flashcards?unit=${u.id}">Flashcards</a>
-        <span class="muted small">${s.mastered} / ${s.total} mastered</span>
+        <span class="muted small">${s.masteryPct}% mastered</span>
       </div>
       <section class="section">
         <h2>Key concepts</h2>
@@ -460,7 +461,7 @@
             ${[5, 10, 20, 999].map((n) => `<button class="chip" data-count="${n}" aria-pressed="${count === n}">${n === 999 ? "All" : n}</button>`).join("")}
           </div>
           <div class="row" style="margin-top:24px">
-            <button class="btn primary" id="startBtn" ${available ? "" : "disabled"}>Start · ${Math.min(count, available)} questions</button>
+            <button class="btn primary" id="startBtn" ${available ? "" : "disabled"}>Start practice</button>
             <button class="btn" id="missedBtn">Retry missed questions</button>
           </div>
           <p class="small muted" id="setupMsg" style="margin:12px 0 0"></p>
@@ -669,7 +670,6 @@
       const unlocked = chapters.filter((c) => isUnlocked(c.num));
       const s = chapterStats(current.num);
       const locked = !isUnlocked(current.num);
-      const qCount = BOOK_QS.filter((q) => q.chapter === current.num).length;
       const unit = unitById(current.unit);
 
       app.innerHTML = `
@@ -703,17 +703,17 @@
               <button class="btn btn-sm" id="lockBtn">${locked ? UNLOCK_ICON + " Unlock" : LOCK_ICON + " Lock"}</button>
             </div>
             <h2 style="margin-top:8px">${esc(current.title)}</h2>
-            <p class="muted">Aligned to <a href="#/units/${unit.id}">Unit ${unit.id}: ${esc(unit.title)}</a> · ${qCount} questions in ${current.sets.length} sets</p>
+            <p class="muted">${unit ? `Aligned to <a href="#/units/${unit.id}">Unit ${unit.id}: ${esc(unit.title)}</a>` : "Foundations: background before c. 1200 (not tested on the AP Modern exam)"}</p>
             ${locked ? `
               <div class="locked-box">${LOCK_ICON} <div><strong>This chapter is locked.</strong><br><span class="muted small">Unlock it when you've read it, or finish the previous chapter with ${MASTER_PCT}%+.</span></div></div>` : `
               <div class="grid-3" style="margin:20px 0">
                 <div class="stat"><div class="num">${s.masteryPct}%</div><div class="label">Mastery</div></div>
                 <div class="stat"><div class="num">${s.accPct === null ? "—" : s.accPct + "%"}</div><div class="label">Accuracy</div></div>
-                <div class="stat"><div class="num">${s.attempted}/${s.total}</div><div class="label">Attempted</div></div>
+                <div class="stat"><div class="num">${s.attempted}</div><div class="label">Answered</div></div>
               </div>
               <div class="row">
                 <button class="btn primary" id="focusBtn">Focus: practice Chapter ${current.num}</button>
-                ${(current.vocab || []).length ? `<a class="btn" href="#/flashcards?deck=c${current.num}">Chapter ${current.num} flashcards (${current.vocab.length})</a>` : ""}
+                ${(current.vocab || []).length ? `<a class="btn" href="#/flashcards?deck=c${current.num}">Chapter ${current.num} flashcards</a>` : ""}
               </div>
               <h3 style="margin-top:28px">Sources in this chapter</h3>
               <ul class="concepts">${current.sets.map((set) => `<li><span class="pill">${esc(set.source.kind)}</span> <span class="small">${esc(set.source.cite)}</span></li>`).join("")}</ul>`}
@@ -775,22 +775,21 @@
 
     const flip = () => { const fc = app.querySelector(".flashcard"); if (fc) fc.classList.toggle("flipped"); };
     const move = (d) => { if (deck.length) { i = (i + d + deck.length) % deck.length; draw(); } };
-    const count = (f) => ALL_CARDS.filter(f).length;
 
     function draw() {
       const c = deck[i];
-      const opt = (id, label, n) => `<option value="${id}" ${deckId === id ? "selected" : ""}>${esc(label)} (${n})</option>`;
+      const opt = (id, label) => `<option value="${id}" ${deckId === id ? "selected" : ""}>${esc(label)}</option>`;
       app.innerHTML = `
-        <div class="eyebrow">Key terms · ${ALL_CARDS.length} cards</div>
+        <div class="eyebrow">Key terms</div>
         <h1>Flashcards</h1>
         <label class="deck-pick">Deck
           <select id="deckSel">
-            ${opt("all", "All cards", ALL_CARDS.length)}
+            ${opt("all", "All cards")}
             <optgroup label="By unit">
-              ${UNITS.map((u) => opt("u" + u.id, `Unit ${u.id}: ${u.title}`, count((x) => x.unit === u.id))).join("")}
+              ${UNITS.map((u) => opt("u" + u.id, `Unit ${u.id}: ${u.title}`)).join("")}
             </optgroup>
             <optgroup label="By textbook chapter">
-              ${TEXTBOOK.chapters.filter((ch) => (ch.vocab || []).length).map((ch) => opt("c" + ch.num, `Ch. ${ch.num}: ${ch.title}`, ch.vocab.length)).join("")}
+              ${TEXTBOOK.chapters.filter((ch) => (ch.vocab || []).length).map((ch) => opt("c" + ch.num, `Ch. ${ch.num}: ${ch.title}`)).join("")}
             </optgroup>
           </select>
         </label>
@@ -828,33 +827,51 @@
   // Writing
   // =====================================================================
   function renderWriting() {
-    let tab = 0, promptIdx = null, timerId = null, remaining = 0;
+    const types = ["SAQ", "DBQ", "LEQ"];
+    const names = { SAQ: "Short Answer", DBQ: "Document-Based Question", LEQ: "Long Essay" };
+    let type = types.includes(store.prefs.writeType) ? store.prefs.writeType : "SAQ";
+    let exam = OFFICIAL_EXAMS[0].id, task = FRQ_TASKS[type].tasks[0][0];
+    let source = "official"; // "official" or a site prompt index
+    let timerId = null, remaining = 0;
     setCleanup(() => clearInterval(timerId));
-    const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+    const fmt = (sec) => `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
+    const workKey = () => source === "official" ? `${exam}:${type}:${task}` : `site:${source}`;
+    const minutesFor = () => type === "SAQ" ? (source === "official" ? 13 : 13) : FRQ_TASKS[type].minutes;
+
+    function scoreRows(key) {
+      const saved = store.scores[key] || [];
+      return SELF_SCORE[type].map(([cat, max, hint], k) => `
+        <div class="score-row">
+          <div><strong>${esc(cat)}</strong><div class="small muted">${esc(hint)}</div></div>
+          <select data-row="${k}" aria-label="${esc(cat)} points">
+            ${Array.from({ length: max + 1 }, (_, v) => `<option value="${v}" ${Number(saved[k] || 0) === v ? "selected" : ""}>${v} / ${max}</option>`).join("")}
+          </select>
+        </div>`).join("");
+    }
+    const maxPoints = () => SELF_SCORE[type].reduce((t, r) => t + r[1], 0);
+    const scoreOf = (key) => (store.scores[key] || []).reduce((t, v) => t + Number(v || 0), 0);
 
     function draw() {
-      const r = WRITING.rubrics[tab];
-      const p = promptIdx !== null ? WRITING.prompts[promptIdx] : null;
-      const draft = p ? store.drafts[promptIdx] || "" : "";
+      const r = WRITING.rubrics.find((x) => x.name === type);
+      const ex = OFFICIAL_EXAMS.find((e) => e.id === exam);
+      const sitePrompts = WRITING.prompts.map((p, k) => ({ p, k })).filter((x) => x.p.type === type);
+      const key = workKey();
+      const draft = store.drafts[key] || "";
+      const sp = source !== "official" ? WRITING.prompts[source] : null;
+      const scored = Object.keys(store.scores).filter((k) => k.split(":")[1] === type || (k.startsWith("site:") && (WRITING.prompts[k.slice(5)] || {}).type === type));
+
       app.innerHTML = `
         <div class="eyebrow">Free response</div>
-        <h1>Writing</h1>
-        <p class="lead">Know how each section is scored, then practice under time.</p>
+        <h1>Writing practice</h1>
+        <p class="lead">Practice short answers, document-based questions, and long essays with official College Board released exams, then score yourself with the rubric.</p>
 
-        <section class="section grid-4">
-          ${WRITING.exam.map((s) => `
-            <div class="card stat">
-              <div class="small muted">${esc(s.part)}</div>
-              <div style="font-weight:600;margin:2px 0">${esc(s.name)}</div>
-              <div class="small muted">${esc(s.detail)}</div>
-              <div class="num" style="margin-top:8px">${esc(s.weight)}</div>
-            </div>`).join("")}
-        </section>
+        <div class="seg seg-inline section" role="tablist" aria-label="Question type" style="margin-top:24px">
+          ${types.map((t) => `<button role="tab" data-type="${t}" aria-selected="${t === type}">${t}</button>`).join("")}
+        </div>
 
-        <section class="section card">
-          <div class="tabs" role="tablist">
-            ${WRITING.rubrics.map((x, k) => `<button class="tab" role="tab" data-tab="${k}" aria-selected="${k === tab}">${x.name} · ${x.points} pts</button>`).join("")}
-          </div>
+        <section class="section card" style="margin-top:20px">
+          <div class="row"><h2 style="margin:0">${names[type]}</h2><span class="spacer"></span><span class="pill">${r.points} points</span></div>
+          <p class="small muted">${esc(WRITING.exam.find((e) => e.name.startsWith(names[type].split(" ")[0])).detail)} · ${esc(WRITING.exam.find((e) => e.name.startsWith(names[type].split(" ")[0])).weight)} of the exam score</p>
           <table>
             <thead><tr><th>Category</th><th>Points</th><th>What earns it</th></tr></thead>
             <tbody>${r.rows.map((row) => `<tr><td><strong>${esc(row[0])}</strong></td><td>${esc(row[1])}</td><td>${esc(row[2])}</td></tr>`).join("")}</tbody>
@@ -862,48 +879,96 @@
           <ul class="tips">${r.tips.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
         </section>
 
-        <section class="section">
-          <div class="row"><h2>Timed practice</h2><span class="spacer"></span>
-            <button class="btn" id="leqBtn">Random LEQ</button>
-            <button class="btn" id="saqBtn">Random SAQ</button>
+        <section class="section card">
+          <h3>Choose a prompt</h3>
+          <div class="pick-grid">
+            <label class="field"><span>Source</span>
+              <select id="srcSel">
+                <option value="official" ${source === "official" ? "selected" : ""}>Official College Board exam</option>
+                ${sitePrompts.map((x) => `<option value="${x.k}" ${String(source) === String(x.k) ? "selected" : ""}>Practice prompt: ${esc(x.p.skill)} · ${esc(x.p.text.slice(0, 60))}…</option>`).join("")}
+              </select>
+            </label>
+            ${source === "official" ? `
+            <label class="field"><span>Exam</span>
+              <select id="examSel">${OFFICIAL_EXAMS.map((e) => `<option value="${e.id}" ${e.id === exam ? "selected" : ""}>${esc(e.label)}</option>`).join("")}</select>
+            </label>
+            <label class="field"><span>Question</span>
+              <select id="taskSel">${FRQ_TASKS[type].tasks.map(([v, l]) => `<option value="${v}" ${v === task ? "selected" : ""}>${esc(l)}</option>`).join("")}</select>
+            </label>` : ""}
           </div>
-          ${p ? `
-            <div class="card" style="margin-top:16px">
-              <div class="row"><span class="pill">${esc(p.type)}</span><span class="pill">${esc(p.skill)}</span><span class="spacer"></span>
-                <span class="timer" id="timer">${fmt(remaining)}</span>
-                <button class="btn" id="timerBtn">${timerId ? "Pause" : "Start timer"}</button>
+          ${source === "official" ? `
+            <div class="official">
+              <div>
+                <strong>${esc(ex.label)} · ${esc(FRQ_TASKS[type].tasks.find((t) => t[0] === task)[1])}</strong>
+                <div class="small muted">Open the official questions${type === "DBQ" ? " and documents" : ""}, find this question, and write your response below.</div>
               </div>
-              <div class="prompt-box">${esc(p.text)}</div>
-              <textarea id="draft" placeholder="Write your response here. Your draft saves to your account automatically.">${esc(draft)}</textarea>
-              <p class="small muted" style="margin-top:8px"><span id="wc">0</span> words</p>
-            </div>` : `<p class="muted" style="margin-top:12px">Pick a random prompt to start. LEQs get a 40-minute timer; SAQs get 13 minutes.</p>`}
-        </section>`;
+              <div class="row">
+                <a class="btn primary" href="${ex.frq}" target="_blank" rel="noopener">Open questions (PDF)</a>
+                <a class="btn" href="${ex.sg || OFFICIAL_PAGE}" target="_blank" rel="noopener">${ex.sg ? "Scoring guidelines (PDF)" : "Scoring guidelines (AP Central)"}</a>
+              </div>
+            </div>
+            <p class="small muted" style="margin:10px 0 0">Official materials © College Board, hosted on AP Central. More years, sample responses, and scoring commentary are on the <a href="${OFFICIAL_PAGE}" target="_blank" rel="noopener">AP Central past exam questions page</a>.</p>` : `
+            <div class="prompt-box">${esc(sp.text)}</div>
+            <p class="small muted" style="margin:0">Practice prompt written for this site in the College Board's style.</p>`}
+        </section>
 
-      app.querySelectorAll(".tab").forEach((b) => b.addEventListener("click", () => { tab = Number(b.dataset.tab); draw(); }));
-      $("#leqBtn").addEventListener("click", () => pick("LEQ"));
-      $("#saqBtn").addEventListener("click", () => pick("SAQ"));
+        <section class="section card">
+          <div class="row"><h3 style="margin:0">Your response</h3><span class="spacer"></span>
+            <span class="timer" id="timer">${fmt(remaining || minutesFor() * 60)}</span>
+            <button class="btn" id="timerBtn">${timerId ? "Pause" : "Start timer"}</button>
+            <button class="btn btn-sm" id="resetTimer">Reset</button>
+          </div>
+          <p class="small muted">Suggested time: ${type === "SAQ" ? "about 13 minutes per short answer (40 minutes for all three)" : type === "DBQ" ? "60 minutes, including 15 minutes to read the documents" : "40 minutes"}.</p>
+          <textarea id="draft" placeholder="Write your response here. It saves to your account automatically.">${esc(draft)}</textarea>
+          <p class="small muted" style="margin-top:8px"><span id="wc">0</span> words</p>
+        </section>
 
-      if (p) {
-        const ta = $("#draft"), wc = $("#wc");
-        const count = () => { wc.textContent = (ta.value.trim().match(/\S+/g) || []).length; };
-        count();
-        ta.addEventListener("input", () => { store.drafts[promptIdx] = ta.value; save(); count(); });
-        $("#timerBtn").addEventListener("click", toggleTimer);
-      }
+        <section class="section card">
+          <div class="row"><h3 style="margin:0">Score yourself</h3><span class="spacer"></span><span class="score-total" id="scoreTotal">${scoreOf(key)} / ${maxPoints()}</span></div>
+          <p class="small muted">Compare your response with the official scoring guidelines${source === "official" && ex.sg ? " and sample responses" : ""}, then record the points you earned.</p>
+          <div id="scoreRows">${scoreRows(key)}</div>
+        </section>
+
+        ${scored.length ? `
+        <section class="section card">
+          <h3>Your scored ${type} responses</h3>
+          <table><thead><tr><th>Prompt</th><th>Score</th></tr></thead><tbody>
+            ${scored.map((k) => {
+              const [a, , c] = k.split(":");
+              const label = k.startsWith("site:") ? "Practice prompt: " + WRITING.prompts[k.slice(5)].skill : `${(OFFICIAL_EXAMS.find((e) => e.id === a) || { label: a }).label}, Q${c}`;
+              return `<tr><td>${esc(label)}</td><td>${scoreOf(k)} / ${maxPoints()}</td></tr>`;
+            }).join("")}
+          </tbody></table>
+        </section>` : ""}`;
+
+      app.querySelectorAll("[data-type]").forEach((b) => b.addEventListener("click", () => {
+        type = b.dataset.type; store.prefs.writeType = type; save();
+        task = FRQ_TASKS[type].tasks[0][0]; source = "official"; resetTimer(); draw();
+      }));
+      $("#srcSel").addEventListener("change", (e) => { source = e.target.value === "official" ? "official" : Number(e.target.value); resetTimer(); draw(); });
+      const es = $("#examSel"), ts = $("#taskSel");
+      if (es) es.addEventListener("change", (e) => { exam = e.target.value; resetTimer(); draw(); });
+      if (ts) ts.addEventListener("change", (e) => { task = e.target.value; resetTimer(); draw(); });
+
+      const ta = $("#draft"), wc = $("#wc");
+      const count = () => { wc.textContent = (ta.value.trim().match(/\S+/g) || []).length; };
+      count();
+      ta.addEventListener("input", () => { store.drafts[key] = ta.value; save(); count(); });
+      $("#timerBtn").addEventListener("click", toggleTimer);
+      $("#resetTimer").addEventListener("click", () => { resetTimer(); $("#timer").textContent = fmt(remaining); $("#timerBtn").textContent = "Start timer"; $("#timerBtn").disabled = false; });
+      app.querySelectorAll("#scoreRows select").forEach((sel) => sel.addEventListener("change", () => {
+        const rows = SELF_SCORE[type].map((_, k) => Number(app.querySelector(`#scoreRows select[data-row="${k}"]`).value));
+        store.scores[key] = rows; save();
+        $("#scoreTotal").textContent = `${scoreOf(key)} / ${maxPoints()}`;
+      }));
     }
 
-    function pick(type) {
-      const options = WRITING.prompts.map((p, k) => ({ p, k })).filter((x) => x.p.type === type && x.k !== promptIdx);
-      promptIdx = options[Math.floor(Math.random() * options.length)].k;
-      clearInterval(timerId);
-      timerId = null;
-      remaining = type === "LEQ" ? 40 * 60 : 13 * 60;
-      draw();
-    }
+    function resetTimer() { clearInterval(timerId); timerId = null; remaining = minutesFor() * 60; }
 
     function toggleTimer() {
       const btn = $("#timerBtn");
       if (timerId) { clearInterval(timerId); timerId = null; btn.textContent = "Resume"; return; }
+      if (!remaining) remaining = minutesFor() * 60;
       btn.textContent = "Pause";
       timerId = setInterval(() => {
         remaining = Math.max(0, remaining - 1);
@@ -917,6 +982,8 @@
         }
       }, 1000);
     }
+
+    resetTimer();
     draw();
   }
 
@@ -926,7 +993,7 @@
   function buildReport() {
     const pad = (s, n) => (s.length > n ? s.slice(0, n - 1) + "…" : s.padEnd(n));
     const line = (label, st) =>
-      `  ${pad(label, 72)} mastery ${String(st.masteryPct).padStart(3)}%  (${st.mastered}/${st.total})   accuracy ${st.accPct === null ? "  —" : String(st.accPct).padStart(3) + "%"}  (${st.c}/${st.a})`;
+      `  ${pad(label, 72)} mastery ${String(st.masteryPct).padStart(3)}%   accuracy ${st.accPct === null ? "  —" : String(st.accPct).padStart(3) + "%"}  (${st.c}/${st.a})`;
     const all = statsFor(ALL_QS);
     const out = [
       "AP World History: Modern — Progress Report",
@@ -936,8 +1003,8 @@
       `Generated: ${new Date().toLocaleString()}`,
       "",
       "OVERALL",
-      `  Questions attempted: ${all.attempted} of ${all.total}`,
-      `  Mastery:  ${all.masteryPct}% (${all.mastered} questions whose latest answer was correct)`,
+      `  Questions answered: ${all.attempted}`,
+      `  Mastery:  ${all.masteryPct}%`,
       `  Accuracy: ${all.accPct === null ? "—" : all.accPct + "%"} (${all.c} correct of ${all.a} answers)`,
       `  Practice sets completed: ${store.history.length}`,
       "",
@@ -975,7 +1042,7 @@
       const mastery = view === "mastery";
       const pct = mastery ? st.masteryPct : st.accPct || 0;
       const right = mastery ? `${st.masteryPct}%` : st.accPct === null ? "Not started" : `${st.accPct}%`;
-      const sub = mastery ? `${st.mastered} of ${st.total} questions mastered` : st.a ? `${st.c} correct of ${st.a} answers` : "No answers yet";
+      const sub = mastery ? (st.attempted ? `${st.mastered} answered correctly on the latest try` : "Not started") : st.a ? `${st.c} correct of ${st.a} answers` : "No answers yet";
       const done = mastery && st.masteryPct >= MASTER_PCT;
       return `<div class="meter-row">
         <div class="meter-label"><a href="${href}">${esc(label)}</a>${extra || ""}${done ? ' <span class="pill pill-good">Mastered</span>' : ""}<div class="small muted">${sub}</div></div>
@@ -992,7 +1059,7 @@
         <p class="lead">${cloud ? "Saved to your account, so it follows you to any device." : "Saved to your account in this browser."}</p>
 
         <section class="section grid-4">
-          <div class="card stat"><div class="num">${all.attempted}<span class="muted small"> / ${all.total}</span></div><div class="label">Questions attempted</div></div>
+          <div class="card stat"><div class="num">${all.attempted}</div><div class="label">Questions answered</div></div>
           <div class="card stat"><div class="num">${all.masteryPct}%</div><div class="label">Mastery</div></div>
           <div class="card stat"><div class="num">${all.accPct === null ? "—" : all.accPct + "%"}</div><div class="label">Accuracy</div></div>
           <div class="card stat"><div class="num">${store.history.length}</div><div class="label">Sets completed</div></div>
